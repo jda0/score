@@ -28,12 +28,17 @@ exports.handler = function(event, context) {
         if (event.body && data.object && data.object === 'page') {
             data.entry.forEach(function(entry) {
                 entry.messaging.forEach(function(mevent, i, a) {
-                    if (mevent.message)
+                    callSendAPI({
+                        recipient: { id: mevent.sender.id },
+                        sender_action: 'mark_seen'
+                    })
+
+                    if (mevent.message) {
                         receivedMessage(mevent, (i === a.length - 1) ? (() => context.succeed({ statusCode: 200 })) : null)
-                    else {
+                    } else {
                         console.warn('Unknown event: ', mevent)
                         context.succeed({ statusCode: 200 })
-                    }    
+                    }
                 })
             }, this);
         } else {
@@ -108,8 +113,8 @@ function giveScore(sender, args, callback) {
                 group,
                 ident: target
             },
-            UpdateExpression: 'ADD score :val, updates 1',
-            ExpressionAttributeValues: { ':val': score },
+            UpdateExpression: 'ADD score :val, updates :one',
+            ExpressionAttributeValues: { ':val': score, ':one': 1 },
             ReturnValues: 'UPDATED_NEW'
         }, function (err, data) {
             if (err) {
@@ -158,7 +163,7 @@ function listScores(sender, args, callback) {
                 }, callback)
             } else {
                 console.log("List of %s succeeded", group)
-                let list = data.Items.sort((a, b) => a.score < b.score).reduce((a, b) => a + '\n' + b.ident + '  ' + b.score + ' (' + b.writes + ')', '')
+                let list = data.Items.sort((a, b) => a.score < b.score).reduce((a, b) => a + '\n' + b.ident + '  ' + b.score + ' (' + b.updates + ')', '')
                 if (list === '')
                     list = '... although there\'s nothing to show 💔'
                 callSendAPI({
@@ -171,9 +176,9 @@ function listScores(sender, args, callback) {
 }
 
 function removePlayer(sender, args, callback) {
-    groupIdx = args.findIndex(a => a.toLowerCase() === 'in' || a.toLowerCase() === 'from')
+    let groupIdx = args.findIndex(a => a.toLowerCase() === 'in' || a.toLowerCase() === 'from')
 
-    if (groupIdx = -1 || args.length < 4) {
+    if (groupIdx == -1 || args.length < 4) {
         console.log("removePlayer parse failed")
         callSendAPI({
             recipient: { id: sender },

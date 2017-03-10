@@ -1,0 +1,45 @@
+$   Use me to keep track of your competitions and games.
+    
+    Get Started :NewGame
+
+$0: Who's competing?
+
+    ________ |> StorePlayers
+
+$1: Give me the scores when you're ready (PLAYERS)
+
+    ________ |> SubmitScores
+OR  * left   |> PlayerLeft
+OR  * joined |> PlayerJoined
+OR  remove * |> PlayerRemoved
+OR  rank     |> ListRanks
+
+$   Are you still playing?
+
+    Yes      |> GOTO $1
+OR  No       |> 
+
+$   What would you like to save your competition as?
+
+    _______  |> SaveUnavailable | SaveScores
+
+
+    New Competition |> GOTO $0
+    Load Competition
+
+$   What competition would you like to load?
+
+    _______  |> $1
+
+
+SaveScores:
+    requiresVerification 
+     ? queue && sendApprovalRequests
+     : _performUpdate
+
+ApproveChange:
+    _performUpdate
+
+_performUpdate:
+    writeChanges
+    updateElo
