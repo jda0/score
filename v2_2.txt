@@ -1,0 +1,96 @@
+Score
+  persistentMenu
+  - "New Competition"
+    - "Knockout"
+        goto knockout
+    - "League"
+        goto league
+  - "My Competitions"
+      goto current
+
+  "Get Started"
+  
+  "What type of competition would you like?"
+  match
+  - quickReply "Knockout"
+knockout:
+      competition = new KnockoutCompetition
+      goto who
+  - quickReply "League"
+league:
+      competition = new LeagueCompetition
+  
+who:
+  "Who are competing?"
+    get ...participants
+
+  "Would you like to add any more groups or competitors?"
+  match
+  - quickReply "Add Group"
+      if group == _default
+        "First, what would you like to name the current group?"
+          get group
+        
+      group = new Group
+      "What would you like to call the new group?"
+        get group
+
+      goto who
+    
+  - quickReply "Add Competitors"
+      goto who
+
+  - quickReply "Done"
+
+current:
+  either
+    carousel
+      foreach groups
+      - title = group
+        "Contests"
+          goto contests
+        "Standings"
+standings:
+        if type = 
+          carousel
+            foreach groups
+            - title = group
+              foreach competitors
+        "Options"
+    
+    match
+    - quickReply "Start Contest"
+        "Which group is the contest in?"
+          quickReplies groups[...11]
+        "Who is the contest between?"
+          quickReplies names[...11]
+
+contests:
+  either
+    carousel
+      foreach contests filteredBy not locked sortedBy ended ASC, lastUpdated DESC
+      - title = contest ++ (if ended "(Ended)" else time)
+        subtitle = score
+        if not locked
+          "Update"
+            goto update
+        if not ended
+          "End Contest"
+            "Ended contest {contest}"
+            contests
+        else
+          "Lock Contest"
+            "Locked contest {contest}"
+            contests
+    - title "Locked Contests"
+      foreach contests
+        longResult
+    
+    match
+    - quickReply "Start Contest"
+        "Who is the contest between?"
+          quickReplies names[...11]
+        goto contests
+
+    - quickReply "Change Group"
+        goto current
